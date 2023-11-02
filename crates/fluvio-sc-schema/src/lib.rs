@@ -30,6 +30,7 @@ pub use fluvio_controlplane_metadata::message;
 pub use error::ApiError;
 mod error {
 
+    use crate::shared::MAX_RESOURCE_NAME_LEN;
     use std::fmt::Display;
     use std::fmt::Formatter;
 
@@ -62,6 +63,9 @@ mod error {
                 }
                 ApiError::Code(ErrorCode::TopicInvalidName, _) => {
                     write!(f,"Invalid topic name: topic name may only include lowercase letters (a-z), numbers (0-9), and hyphens (-).")
+                }
+                ApiError::Code(ErrorCode::TopicNameTooBig, _) => {
+                    write!(f,"Topic name too big: topic name exceeds the max limit {MAX_RESOURCE_NAME_LEN} of characters")
                 }
                 ApiError::Code(ErrorCode::TableFormatAlreadyExists, _) => {
                     write!(f, "TableFormat already exists")

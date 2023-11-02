@@ -17,6 +17,7 @@ use fluvio_controlplane_metadata::topic::ReplicaSpec;
 use fluvio_sc_schema::objects::CreateRequest;
 use fluvio_sc_schema::shared::validate_resource_name;
 use fluvio_sc_schema::Status;
+use fluvio_sc_schema::shared::ValidateResourceNameError;
 use fluvio_sc_schema::topic::TopicSpec;
 use fluvio_auth::{AuthContext, TypeAction};
 use fluvio_controlplane_metadata::extended::SpecExt;
@@ -81,11 +82,22 @@ async fn validate_topic_request<C: MetadataItem>(
     debug!("validating topic: {}", name);
 
     if let Err(err) = validate_resource_name(name) {
-        return Status::new(
-            name.to_string(),
-            ErrorCode::TopicInvalidName,
-            Some(format!("Invalid topic name: '{name}'. {err}")),
-        );
+        match err {
+            ValidateResourceNameError::NameLengthExceeded => {
+                return Status::new(
+                    name.to_string(),
+                    ErrorCode::TopicNameTooBig,
+                    Some(format!("topic name too big: '{name}'. {err}")),
+                    );
+            }
+            ValidateResourceNameError::InvalidCharacterEncountered => {
+                return Status::new(
+                    name.to_string(),
+                    ErrorCode::TopicInvalidName,
+                    Some(format!("Invalid topic name: '{name}'. {err}")),
+                    );
+            }
+        }
     }
 
     let topics = metadata.topics().store();
